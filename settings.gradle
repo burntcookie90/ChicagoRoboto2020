@@ -1,0 +1,8 @@
+rootProject.name = "Chicago Roboto 2020"
+include ':compose-app'
+include ':ui-models'
+include ':db'
+include ':repo'
+include ':modifier'
+include ':graph'
+include ':not-compose-app'
