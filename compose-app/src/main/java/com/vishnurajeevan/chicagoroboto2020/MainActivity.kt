@@ -17,8 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.setContent
 import androidx.compose.ui.unit.dp
 import androidx.ui.tooling.preview.Preview
-import androidx.ui.tooling.preview.PreviewParameter
-import androidx.ui.tooling.preview.PreviewParameterProvider
 import com.vishnurajeevan.chicagoroboto2020.graph.Graph
 import com.vishnurajeevan.chicagoroboto2020.models.UiNote
 import com.vishnurajeevan.chicagoroboto2020.modifier.DataModifier
@@ -64,6 +62,7 @@ fun NoteScreen() {
   }
 
   Providers(AmbientDataModifier provides Graph.modifier) {
+    val dataModifier = AmbientDataModifier.current
     ChicagoRoboto2020Theme {
       // A surface container using the 'background' color from the theme
       Surface(color = MaterialTheme.colors.background) {
@@ -71,7 +70,10 @@ fun NoteScreen() {
           topBar = { AppBar() },
           floatingActionButton = {
             if (!state.value.isLoading) {
-              NewNoteFab(state.value.addingEnabled, onClick = { showNoteCompositionDialog(true) })
+              NewNoteFab(
+                enabled = state.value.addingEnabled,
+                onClick = { showNoteCompositionDialog(true) }
+              )
             }
           }
         ) {
@@ -81,8 +83,24 @@ fun NoteScreen() {
             onItemClicked = {
               state.value = state.value.copy(showCompositionDialog = true, noteToEdit = it)
             })
+
           if (state.value.showCompositionDialog) {
-            NoteDialog(note = state.value.noteToEdit, showDialog = ::showNoteCompositionDialog)
+            NoteDialog(
+              note = state.value.noteToEdit,
+              onNoteCreate = { title, desc ->
+                dataModifier.submit(Modification.CreateNote(title, desc))
+                showNoteCompositionDialog(false)
+              },
+              onNoteUpdate = {
+                dataModifier.submit(Modification.UpdateNote(it))
+                showNoteCompositionDialog(false)
+              },
+              onNoteDelete = {
+                dataModifier.submit(Modification.DeleteNote(it))
+                showNoteCompositionDialog(false)
+              },
+              onDismiss = { showNoteCompositionDialog(false) }
+            )
           }
         }
       }
@@ -100,10 +118,9 @@ fun AppBar() {
   }
 }
 
-@Preview
 @Composable
 fun NoteItem(
-  @PreviewParameter(SampleNoteProvider::class) note: UiNote,
+  note: UiNote,
   onItemClicked: (UiNote) -> Unit = {}
 ) {
   Card(
@@ -118,12 +135,11 @@ fun NoteItem(
   }
 }
 
-@Preview
 @Composable
 fun NoteList(
-  @PreviewParameter(SampleNoteListProvider::class) list: List<UiNote>,
-  isLoading: Boolean = false,
-  onItemClicked: (UiNote) -> Unit = {}
+  list: List<UiNote>,
+  isLoading: Boolean,
+  onItemClicked: (UiNote) -> Unit
 ) {
   when {
     isLoading -> Box(modifier = Modifier.fillMaxSize(), gravity = Alignment.Center) {
@@ -138,26 +154,37 @@ fun NoteList(
   }
 }
 
+
 @Composable
 fun NewNoteFab(enabled: Boolean, onClick: () -> Unit) {
   ExtendedFloatingActionButton(
     text = { if (enabled) Text("Add New Note") else Text("Maximum Notes") },
-    onClick = { if (enabled) { onClick() }
+    backgroundColor = if (enabled) MaterialTheme.colors.secondary else MaterialTheme.colors.error,
+    contentColor = if (enabled) MaterialTheme.colors.onSecondary else MaterialTheme.colors.onError,
+    onClick = {
+      if (enabled) {
+        onClick()
+      }
     }
   )
 }
 
 @Composable
-fun NoteDialog(note: UiNote? = null, showDialog: (Boolean) -> Unit) {
+fun NoteDialog(
+  note: UiNote? = null,
+  onNoteCreate: (title: String, description: String) -> Unit = { _, _ -> },
+  onNoteUpdate: (UiNote) -> Unit = {},
+  onNoteDelete: (id: Long) -> Unit = {},
+  onDismiss: () -> Unit = {}
+) {
   val isCreation = note == null
   val title = remember { mutableStateOf(note?.title ?: "") }
   val description = remember { mutableStateOf(note?.description ?: "") }
-  val dataModifier = AmbientDataModifier.current
 
   val dialogTitle = if (isCreation) "New Note" else "Update Note"
 
   AlertDialog(
-    onDismissRequest = { showDialog(false) },
+    onDismissRequest = { onDismiss() },
     title = { Text(dialogTitle) },
     text = {
       Column {
@@ -170,12 +197,7 @@ fun NoteDialog(note: UiNote? = null, showDialog: (Boolean) -> Unit) {
     confirmButton = {
       if (isCreation) {
         Button(
-          onClick = {
-            dataModifier.submit(
-              Modification.CreateNote(title = title.value, description = description.value)
-            )
-            showDialog(false)
-          },
+          onClick = { onNoteCreate(title.value, description.value) },
           enabled = title.value.isNotBlank() && description.value.isNotBlank()
         ) {
           Text(text = "Create")
@@ -183,12 +205,7 @@ fun NoteDialog(note: UiNote? = null, showDialog: (Boolean) -> Unit) {
       } else {
         Button(
           onClick = {
-            dataModifier.submit(
-              Modification.UpdateNote(
-                note!!.copy(title = title.value, description = description.value)
-              )
-            )
-            showDialog(false)
+            onNoteUpdate(note!!.copy(title = title.value, description = description.value))
           },
           enabled = title.value.isNotBlank() && description.value.isNotBlank()
         ) { Text(text = "Update") }
@@ -199,26 +216,57 @@ fun NoteDialog(note: UiNote? = null, showDialog: (Boolean) -> Unit) {
         Button(
           backgroundColor = MaterialTheme.colors.error,
           contentColor = MaterialTheme.colors.onError,
-          onClick = {
-            dataModifier.submit(Modification.DeleteNote(note!!.id))
-            showDialog(false)
-          }
+          onClick = { onNoteDelete(note!!.id) }
         ) { Text(text = "Delete") }
       }
     }
   )
 }
 
-class SampleNoteProvider : PreviewParameterProvider<UiNote> {
-  override val values = sequenceOf(UiNote(1L, "title", "This is my preview description"))
-}
+// region previews
+@Preview("note item")
+@Composable
+fun NoteItemPreview() = NoteItem(
+  note =
+  UiNote(1L, "title", "This is my preview description")
+)
 
-class SampleNoteListProvider : PreviewParameterProvider<List<UiNote>> {
-  override val values: Sequence<List<UiNote>>
-    get() = sequenceOf(
-      listOf(
-        UiNote(1L, "First Note", "This is the description for the first note"),
-        UiNote(2L, "Second Note", "This is the description for the second note"),
-      )
-    )
-}
+@Preview(name = "empty list")
+@Composable
+fun EmptyNoteList() = NoteList(emptyList(), false, {})
+
+@Preview(name = "loading")
+@Composable
+fun LoadingNoteList() = NoteList(emptyList(), true, {})
+
+@Preview(name = "loaded list")
+@Composable
+fun PreviewNoteList() = NoteList(
+  list = listOf(
+    UiNote(1L, "Title 1", "Desc 1"),
+    UiNote(2L, "Title 2", "Desc 2"),
+    UiNote(3L, "Title 3", "Desc 3"),
+  ),
+  isLoading = false,
+  onItemClicked = {}
+)
+
+@Preview("enabled fab")
+@Composable
+fun EnabledFabPreview() = NewNoteFab(enabled = true, onClick = {})
+
+@Preview("disabled fab")
+@Composable
+fun DisabledFabPreview() = NewNoteFab(enabled = false, onClick = {})
+
+//@Preview("new note dialog")
+//@Composable
+//fun NewNoteDialogPreview() = NoteDialog()
+//
+//@Preview("edit note dialog")
+//@Composable
+//fun EditNoteDialogPreview() = NoteDialog(
+//  note = UiNote(1L, "title", "This is my preview description")
+//)
+
+// endregion
