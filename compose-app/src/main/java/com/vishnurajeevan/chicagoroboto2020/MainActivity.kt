@@ -24,7 +24,9 @@ import com.vishnurajeevan.chicagoroboto2020.models.UiNote
 import com.vishnurajeevan.chicagoroboto2020.modifier.DataModifier
 import com.vishnurajeevan.chicagoroboto2020.modifier.Modification
 import com.vishnurajeevan.chicagoroboto2020.ui.ChicagoRoboto2020Theme
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flowOn
 
 val AmbientDataModifier = ambientOf { DataModifier() }
 
@@ -39,54 +41,61 @@ class MainActivity : AppCompatActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     Graph.setup(this.applicationContext)
+    setContent { NoteScreen() }
+  }
+}
 
-    setContent {
-      val state = remember { mutableStateOf(ViewState()) }
-      launchInComposition {
-        Graph.noteRepo.notes().collect {
-          state.value = state.value.copy(isLoading = false, notes = it)
-        }
-      }
-      Providers(AmbientDataModifier provides Graph.modifier) {
-        ChicagoRoboto2020Theme {
-          // A surface container using the 'background' color from the theme
-          Surface(color = MaterialTheme.colors.background) {
-            fun showNoteCompositionDialog(shouldShow: Boolean) {
-              state.value = state.value.copy(
-                showCompositionDialog = shouldShow,
-                noteToEdit = if (shouldShow) state.value.noteToEdit else null
-              )
+@Composable
+fun NoteScreen() {
+  val state = remember { mutableStateOf(ViewState()) }
+  launchInComposition {
+    Graph.noteRepo.notes().flowOn(Dispatchers.IO).collect {
+      state.value = state.value.copy(isLoading = false, notes = it)
+    }
+  }
+
+  fun showNoteCompositionDialog(shouldShow: Boolean) {
+    state.value = state.value.copy(
+      showCompositionDialog = shouldShow,
+      noteToEdit = if (shouldShow) state.value.noteToEdit else null
+    )
+  }
+
+  Providers(AmbientDataModifier provides Graph.modifier) {
+    ChicagoRoboto2020Theme {
+      // A surface container using the 'background' color from the theme
+      Surface(color = MaterialTheme.colors.background) {
+        Scaffold(
+          topBar = { AppBar() },
+          floatingActionButton = {
+            if (!state.value.isLoading) {
+              val enabled = state.value.notes.size < 5
+              NewNoteFab(enabled, onClick = { showNoteCompositionDialog(true) })
             }
-            Scaffold(
-              topBar = {
-                TopAppBar() {
-                  Box(
-                    modifier = Modifier.fillMaxSize().padding(start = 16.dp),
-                    gravity = Alignment.CenterStart
-                  ) { Text(text = "Compose App", style = MaterialTheme.typography.h5) }
-                }
-              },
-              floatingActionButton = {
-                if (!state.value.isLoading) {
-                  val enabled = state.value.notes.size < 5
-                  NewNoteFab(enabled, onClick = { showNoteCompositionDialog(true) })
-                }
-              }
-            ) {
-              NoteList(
-                list = state.value.notes,
-                isLoading = state.value.isLoading,
-                onItemClicked = {
-                  state.value = state.value.copy(showCompositionDialog = true, noteToEdit = it)
-                })
-              if (state.value.showCompositionDialog) {
-                NoteDialog(note = state.value.noteToEdit, showDialog = ::showNoteCompositionDialog)
-              }
-            }
+          }
+        ) {
+          NoteList(
+            list = state.value.notes,
+            isLoading = state.value.isLoading,
+            onItemClicked = {
+              state.value = state.value.copy(showCompositionDialog = true, noteToEdit = it)
+            })
+          if (state.value.showCompositionDialog) {
+            NoteDialog(note = state.value.noteToEdit, showDialog = ::showNoteCompositionDialog)
           }
         }
       }
     }
+  }
+}
+
+@Composable
+fun AppBar() {
+  TopAppBar() {
+    Box(
+      modifier = Modifier.fillMaxSize().padding(start = 16.dp),
+      gravity = Alignment.CenterStart
+    ) { Text(text = "Compose App", style = MaterialTheme.typography.h5) }
   }
 }
 
