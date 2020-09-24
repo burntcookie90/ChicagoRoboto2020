@@ -35,7 +35,9 @@ data class ViewState(
   val noteToEdit: UiNote? = null,
   val isLoading: Boolean = true,
   val notes: List<UiNote> = emptyList()
-)
+) {
+  val addingEnabled get() = notes.size < 5
+}
 
 class MainActivity : AppCompatActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,8 +71,7 @@ fun NoteScreen() {
           topBar = { AppBar() },
           floatingActionButton = {
             if (!state.value.isLoading) {
-              val enabled = state.value.notes.size < 5
-              NewNoteFab(enabled, onClick = { showNoteCompositionDialog(true) })
+              NewNoteFab(state.value.addingEnabled, onClick = { showNoteCompositionDialog(true) })
             }
           }
         ) {
@@ -141,10 +142,7 @@ fun NoteList(
 fun NewNoteFab(enabled: Boolean, onClick: () -> Unit) {
   ExtendedFloatingActionButton(
     text = { if (enabled) Text("Add New Note") else Text("Maximum Notes") },
-    onClick = {
-      if (enabled) {
-        onClick()
-      }
+    onClick = { if (enabled) { onClick() }
     }
   )
 }
@@ -162,7 +160,7 @@ fun NoteDialog(note: UiNote? = null, showDialog: (Boolean) -> Unit) {
     onDismissRequest = { showDialog(false) },
     title = { Text(dialogTitle) },
     text = {
-      Column() {
+      Column {
         Text("Title")
         TextField(value = title.value, onValueChange = { title.value = it })
         Text("Description")
