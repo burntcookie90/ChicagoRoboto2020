@@ -19,11 +19,11 @@ object NoteDao {
     isReady = true
   }
 
-  fun saveNote(note: Note) = noteQueries.insert(note)
-
-  fun deleteNote(id: Long) = noteQueries.delete(id)
+  fun createNote(title: String, description: String) = noteQueries.insert(title, description)
 
   fun updateNote(note: Note) = noteQueries.update(note.title, note.description, note.id)
+
+  fun deleteNote(id: Long) = noteQueries.delete(id)
 
   fun notes() = noteQueries.selectAll().asFlow().mapToList(Dispatchers.IO)
 

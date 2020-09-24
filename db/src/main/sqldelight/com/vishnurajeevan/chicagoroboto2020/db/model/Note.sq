@@ -8,8 +8,8 @@ selectAll:
 SELECT * FROM note;
 
 insert:
-INSERT INTO note(id, title, description)
-VALUES ?;
+INSERT INTO note(title, description)
+VALUES (?, ?);
 
 update:
 UPDATE note
