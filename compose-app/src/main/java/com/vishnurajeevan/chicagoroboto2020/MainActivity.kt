@@ -1,22 +1,19 @@
 package com.vishnurajeevan.chicagoroboto2020
 
 import android.os.Bundle
-import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Box
-import androidx.compose.foundation.Icon
 import androidx.compose.foundation.Text
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.RowScope.align
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumnFor
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.setContent
 import androidx.compose.ui.unit.dp
 import androidx.ui.tooling.preview.Preview
@@ -28,7 +25,6 @@ import com.vishnurajeevan.chicagoroboto2020.modifier.DataModifier
 import com.vishnurajeevan.chicagoroboto2020.modifier.Modification
 import com.vishnurajeevan.chicagoroboto2020.ui.ChicagoRoboto2020Theme
 import kotlinx.coroutines.flow.collect
-import java.util.*
 
 val AmbientDataModifier = ambientOf { DataModifier() }
 
@@ -48,7 +44,6 @@ class MainActivity : AppCompatActivity() {
       val state = remember { mutableStateOf(ViewState()) }
       launchInComposition {
         Graph.noteRepo.notes().collect {
-          Log.d("Meow", "Got notes: $it")
           state.value = state.value.copy(isLoading = false, notes = it)
         }
       }
@@ -68,9 +63,7 @@ class MainActivity : AppCompatActivity() {
                   Box(
                     modifier = Modifier.fillMaxSize().padding(start = 16.dp),
                     gravity = Alignment.CenterStart
-                  ) {
-                    Text(text = "Compose App", style = MaterialTheme.typography.h5)
-                  }
+                  ) { Text(text = "Compose App", style = MaterialTheme.typography.h5) }
                 }
               },
               floatingActionButton = {
@@ -108,10 +101,7 @@ fun NoteItem(
       .clickable(onClick = { onItemClicked(note) }),
     elevation = 2.dp
   ) {
-    Column(
-      modifier = Modifier.padding(8.dp)
-        .fillMaxWidth()
-    ) {
+    Column(modifier = Modifier.padding(8.dp).fillMaxWidth()) {
       Text(text = note.title, style = MaterialTheme.typography.h6)
       Text(text = note.description, style = MaterialTheme.typography.body1)
     }
@@ -141,13 +131,7 @@ fun NoteList(
 @Composable
 fun NewNoteFab(enabled: Boolean, onClick: () -> Unit) {
   ExtendedFloatingActionButton(
-    text = {
-      if (enabled) {
-        Text("Add New Note")
-      } else {
-        Text("Maximum Notes")
-      }
-    },
+    text = { if (enabled) Text("Add New Note") else Text("Maximum Notes") },
     onClick = {
       if (enabled) {
         onClick()
@@ -163,11 +147,7 @@ fun NoteDialog(note: UiNote? = null, showDialog: (Boolean) -> Unit) {
   val description = remember { mutableStateOf(note?.description ?: "") }
   val dataModifier = AmbientDataModifier.current
 
-  val dialogTitle = if (isCreation) {
-    "New Note"
-  } else {
-    "Update Note"
-  }
+  val dialogTitle = if (isCreation) "New Note" else "Update Note"
 
   AlertDialog(
     onDismissRequest = { showDialog(false) },
@@ -185,10 +165,7 @@ fun NoteDialog(note: UiNote? = null, showDialog: (Boolean) -> Unit) {
         Button(
           onClick = {
             dataModifier.submit(
-              Modification.CreateNote(
-                title = title.value,
-                description = description.value
-              )
+              Modification.CreateNote(title = title.value, description = description.value)
             )
             showDialog(false)
           },
@@ -201,18 +178,13 @@ fun NoteDialog(note: UiNote? = null, showDialog: (Boolean) -> Unit) {
           onClick = {
             dataModifier.submit(
               Modification.UpdateNote(
-                note!!.copy(
-                  title = title.value,
-                  description = description.value
-                )
+                note!!.copy(title = title.value, description = description.value)
               )
             )
             showDialog(false)
           },
           enabled = title.value.isNotBlank() && description.value.isNotBlank()
-        ) {
-          Text(text = "Update")
-        }
+        ) { Text(text = "Update") }
       }
     },
     dismissButton = {
@@ -221,14 +193,10 @@ fun NoteDialog(note: UiNote? = null, showDialog: (Boolean) -> Unit) {
           backgroundColor = MaterialTheme.colors.error,
           contentColor = MaterialTheme.colors.onError,
           onClick = {
-            dataModifier.submit(
-              Modification.DeleteNote(note!!.id)
-            )
+            dataModifier.submit(Modification.DeleteNote(note!!.id))
             showDialog(false)
           }
-        ) {
-          Text(text = "Delete")
-        }
+        ) { Text(text = "Delete") }
       }
     }
   )
