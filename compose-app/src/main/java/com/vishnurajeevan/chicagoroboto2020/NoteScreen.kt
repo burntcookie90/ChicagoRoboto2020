@@ -41,47 +41,45 @@ fun NoteScreen() {
     )
   }
 
-  Providers(AmbientDataModifier provides Graph.modifier) {
-    val dataModifier = AmbientDataModifier.current
-    ChicagoRoboto2020Theme {
-      // A surface container using the 'background' color from the theme
-      Surface(color = MaterialTheme.colors.background) {
-        Scaffold(
-            topBar = { AppBar() },
-            floatingActionButton = {
-              if (!state.value.isLoading) {
-                NewNoteFab(
-                    allowCreation = state.value.creationEnabled,
-                    onClick = { showNoteCompositionDialog(true) }
-                )
-              }
+  val dataModifier = AmbientDataModifier.current
+  ChicagoRoboto2020Theme {
+    // A surface container using the 'background' color from the theme
+    Surface(color = MaterialTheme.colors.background) {
+      Scaffold(
+          topBar = { AppBar() },
+          floatingActionButton = {
+            if (!state.value.isLoading) {
+              NewNoteFab(
+                  allowCreation = state.value.creationEnabled,
+                  onClick = { showNoteCompositionDialog(true) }
+              )
             }
-        ) {
-          NoteList(
-              list = state.value.notes,
-              isLoading = state.value.isLoading,
-              onItemClicked = {
-                state.value = state.value.copy(showCompositionDialog = true, noteToEdit = it)
-              })
-
-          if (state.value.showCompositionDialog) {
-            NoteDialog(
-                note = state.value.noteToEdit,
-                onNoteCreate = { title, desc ->
-                  dataModifier.submit(Modification.CreateNote(title, desc))
-                  showNoteCompositionDialog(false)
-                },
-                onNoteUpdate = {
-                  dataModifier.submit(Modification.UpdateNote(it))
-                  showNoteCompositionDialog(false)
-                },
-                onNoteDelete = {
-                  dataModifier.submit(Modification.DeleteNote(it))
-                  showNoteCompositionDialog(false)
-                },
-                onDismiss = { showNoteCompositionDialog(false) }
-            )
           }
+      ) {
+        NoteList(
+            list = state.value.notes,
+            isLoading = state.value.isLoading,
+            onItemClicked = {
+              state.value = state.value.copy(showCompositionDialog = true, noteToEdit = it)
+            })
+
+        if (state.value.showCompositionDialog) {
+          NoteDialog(
+              note = state.value.noteToEdit,
+              onNoteCreate = { title, desc ->
+                dataModifier.submit(Modification.CreateNote(title, desc))
+                showNoteCompositionDialog(false)
+              },
+              onNoteUpdate = {
+                dataModifier.submit(Modification.UpdateNote(it))
+                showNoteCompositionDialog(false)
+              },
+              onNoteDelete = {
+                dataModifier.submit(Modification.DeleteNote(it))
+                showNoteCompositionDialog(false)
+              },
+              onDismiss = { showNoteCompositionDialog(false) }
+          )
         }
       }
     }
@@ -134,7 +132,6 @@ fun NoteList(
   }
 }
 
-
 @Preview("New Note Fab")
 @Composable
 fun NewNoteFab(
@@ -144,7 +141,10 @@ fun NewNoteFab(
       text = { if (allowCreation) Text("Add New Note") else Text("Maximum Notes") },
       backgroundColor = if (allowCreation) MaterialTheme.colors.secondary else MaterialTheme.colors.error,
       contentColor = if (allowCreation) MaterialTheme.colors.onSecondary else MaterialTheme.colors.onError,
-      onClick = { if (allowCreation) { onClick() }
+      onClick = {
+        if (allowCreation) {
+          onClick()
+        }
       }
   )
 }
