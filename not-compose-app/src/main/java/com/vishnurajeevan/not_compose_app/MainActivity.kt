@@ -31,6 +31,8 @@ class MainActivity : AppCompatActivity() {
   private val viewModel by viewModels<NoteListViewModel>()
   private var noteDialog: AlertDialog? = null
 
+  private val modifier by lazy { Graph.modifier }
+
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     binding = ActivityMainBinding.inflate(layoutInflater)
@@ -106,7 +108,7 @@ class MainActivity : AppCompatActivity() {
           val title = "New Note"
           confirmButton.text = "Create"
           confirmButton.setOnClickListener {
-            Graph.modifier.submit(
+            modifier.submit(
                 Modification.CreateNote(
                     noteTitle.text.toString(),
                     noteDesc.text.toString()
@@ -129,7 +131,7 @@ class MainActivity : AppCompatActivity() {
           noteDesc.setText(note.description)
           confirmButton.text = "Update"
           confirmButton.setOnClickListener {
-            Graph.modifier.submit(
+            modifier.submit(
                 Modification.UpdateNote(
                     note.copy(
                         title = noteTitle.text.toString(),
@@ -141,7 +143,7 @@ class MainActivity : AppCompatActivity() {
           }
           deleteButton.visibility = View.VISIBLE
           deleteButton.setOnClickListener {
-            Graph.modifier.submit(Modification.DeleteNote(note.id))
+            modifier.submit(Modification.DeleteNote(note.id))
             viewModel.showNoteCompositionDialog(false)
           }
 
@@ -160,7 +162,7 @@ class MainActivity : AppCompatActivity() {
 }
 
 class NoteListViewModel() : ViewModel() {
-  private val repo = Graph.noteRepo
+  private val repo by lazy { Graph.noteRepo }
   val state = MutableLiveData(NoteListViewState())
 
   fun load() = viewModelScope.launch {
