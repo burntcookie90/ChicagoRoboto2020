@@ -137,16 +137,14 @@ fun NoteList(
 
 @Preview("New Note Fab")
 @Composable
-fun NewNoteFab(@PreviewParameter(
-    FabPreviewAllowCreationParamProvider::class) allowCreation: Boolean, onClick: () -> Unit = {}) {
+fun NewNoteFab(
+    @PreviewParameter(FabPreviewAllowCreationParamProvider::class) allowCreation: Boolean,
+    onClick: () -> Unit = {}) {
   ExtendedFloatingActionButton(
       text = { if (allowCreation) Text("Add New Note") else Text("Maximum Notes") },
       backgroundColor = if (allowCreation) MaterialTheme.colors.secondary else MaterialTheme.colors.error,
       contentColor = if (allowCreation) MaterialTheme.colors.onSecondary else MaterialTheme.colors.onError,
-      onClick = {
-        if (allowCreation) {
-          onClick()
-        }
+      onClick = { if (allowCreation) { onClick() }
       }
   )
 }
