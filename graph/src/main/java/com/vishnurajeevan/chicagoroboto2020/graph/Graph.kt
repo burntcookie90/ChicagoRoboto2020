@@ -16,6 +16,9 @@ object Graph {
     if (!NoteDao.isReady) {
       NoteDao.setup(AndroidSqliteDriver(Database.Schema, context, "notes.db"))
     }
+    else {
+      error("Not ready!")
+    }
   }
 
 }
