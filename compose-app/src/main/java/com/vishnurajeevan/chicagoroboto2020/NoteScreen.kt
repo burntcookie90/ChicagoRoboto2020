@@ -36,8 +36,8 @@ fun NoteScreen() {
 
   fun showNoteCompositionDialog(shouldShow: Boolean) {
     state.value = state.value.copy(
-      showCompositionDialog = shouldShow,
-      noteToEdit = if (shouldShow) state.value.noteToEdit else null
+        showCompositionDialog = shouldShow,
+        noteToEdit = if (shouldShow) state.value.noteToEdit else null
     )
   }
 
@@ -47,39 +47,39 @@ fun NoteScreen() {
       // A surface container using the 'background' color from the theme
       Surface(color = MaterialTheme.colors.background) {
         Scaffold(
-          topBar = { AppBar() },
-          floatingActionButton = {
-            if (!state.value.isLoading) {
-              NewNoteFab(
-                allowCreation = state.value.creationEnabled,
-                onClick = { showNoteCompositionDialog(true) }
-              )
+            topBar = { AppBar() },
+            floatingActionButton = {
+              if (!state.value.isLoading) {
+                NewNoteFab(
+                    allowCreation = state.value.creationEnabled,
+                    onClick = { showNoteCompositionDialog(true) }
+                )
+              }
             }
-          }
         ) {
           NoteList(
-            list = state.value.notes,
-            isLoading = state.value.isLoading,
-            onItemClicked = {
-              state.value = state.value.copy(showCompositionDialog = true, noteToEdit = it)
-            })
+              list = state.value.notes,
+              isLoading = state.value.isLoading,
+              onItemClicked = {
+                state.value = state.value.copy(showCompositionDialog = true, noteToEdit = it)
+              })
 
           if (state.value.showCompositionDialog) {
             NoteDialog(
-              note = state.value.noteToEdit,
-              onNoteCreate = { title, desc ->
-                dataModifier.submit(Modification.CreateNote(title, desc))
-                showNoteCompositionDialog(false)
-              },
-              onNoteUpdate = {
-                dataModifier.submit(Modification.UpdateNote(it))
-                showNoteCompositionDialog(false)
-              },
-              onNoteDelete = {
-                dataModifier.submit(Modification.DeleteNote(it))
-                showNoteCompositionDialog(false)
-              },
-              onDismiss = { showNoteCompositionDialog(false) }
+                note = state.value.noteToEdit,
+                onNoteCreate = { title, desc ->
+                  dataModifier.submit(Modification.CreateNote(title, desc))
+                  showNoteCompositionDialog(false)
+                },
+                onNoteUpdate = {
+                  dataModifier.submit(Modification.UpdateNote(it))
+                  showNoteCompositionDialog(false)
+                },
+                onNoteDelete = {
+                  dataModifier.submit(Modification.DeleteNote(it))
+                  showNoteCompositionDialog(false)
+                },
+                onDismiss = { showNoteCompositionDialog(false) }
             )
           }
         }
@@ -92,21 +92,21 @@ fun NoteScreen() {
 fun AppBar() {
   TopAppBar() {
     Box(
-      modifier = Modifier.fillMaxSize().padding(start = 16.dp),
-      gravity = Alignment.CenterStart
+        modifier = Modifier.fillMaxSize().padding(start = 16.dp),
+        gravity = Alignment.CenterStart
     ) { Text(text = "Compose App", style = MaterialTheme.typography.h5) }
   }
 }
 
 @Composable
 fun NoteItem(
-  note: UiNote,
-  onItemClicked: (UiNote) -> Unit = {}
+    note: UiNote,
+    onItemClicked: (UiNote) -> Unit = {}
 ) {
   Card(
-    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 4.dp)
-      .clickable(onClick = { onItemClicked(note) }),
-    elevation = 2.dp
+      modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 4.dp)
+          .clickable(onClick = { onItemClicked(note) }),
+      elevation = 2.dp
   ) {
     Column(modifier = Modifier.padding(8.dp).fillMaxWidth()) {
       Text(text = note.title, style = MaterialTheme.typography.h6)
@@ -117,9 +117,9 @@ fun NoteItem(
 
 @Composable
 fun NoteList(
-  list: List<UiNote>,
-  isLoading: Boolean,
-  onItemClicked: (UiNote) -> Unit
+    list: List<UiNote>,
+    isLoading: Boolean,
+    onItemClicked: (UiNote) -> Unit
 ) {
   when {
     isLoading -> Box(modifier = Modifier.fillMaxSize(), gravity = Alignment.Center) {
@@ -137,79 +137,95 @@ fun NoteList(
 
 @Preview("New Note Fab")
 @Composable
-fun NewNoteFab(@PreviewParameter(FabPreviewAllowCreationParamProvider::class) allowCreation: Boolean, onClick: () -> Unit = {}) {
+fun NewNoteFab(@PreviewParameter(
+    FabPreviewAllowCreationParamProvider::class) allowCreation: Boolean, onClick: () -> Unit = {}) {
   ExtendedFloatingActionButton(
-    text = { if (allowCreation) Text("Add New Note") else Text("Maximum Notes") },
-    backgroundColor = if (allowCreation) MaterialTheme.colors.secondary else MaterialTheme.colors.error,
-    contentColor = if (allowCreation) MaterialTheme.colors.onSecondary else MaterialTheme.colors.onError,
-    onClick = {
-      if (allowCreation) {
-        onClick()
+      text = { if (allowCreation) Text("Add New Note") else Text("Maximum Notes") },
+      backgroundColor = if (allowCreation) MaterialTheme.colors.secondary else MaterialTheme.colors.error,
+      contentColor = if (allowCreation) MaterialTheme.colors.onSecondary else MaterialTheme.colors.onError,
+      onClick = {
+        if (allowCreation) {
+          onClick()
+        }
       }
-    }
   )
 }
 
 @Composable
 fun NoteDialog(
-  note: UiNote? = null,
-  onNoteCreate: (title: String, description: String) -> Unit = { _, _ -> },
-  onNoteUpdate: (UiNote) -> Unit = {},
-  onNoteDelete: (id: Long) -> Unit = {},
-  onDismiss: () -> Unit = {}
+    note: UiNote? = null,
+    onNoteCreate: (title: String, description: String) -> Unit = { _, _ -> },
+    onNoteUpdate: (UiNote) -> Unit = {},
+    onNoteDelete: (id: Long) -> Unit = {},
+    onDismiss: () -> Unit = {}
 ) {
-  val isCreation = note == null
-  val title = remember { mutableStateOf(note?.title ?: "") }
-  val description = remember { mutableStateOf(note?.description ?: "") }
+  when (note) {
+    null -> {
+      val title = remember { mutableStateOf("") }
+      val description = remember { mutableStateOf("") }
 
-  val dialogTitle = if (isCreation) "New Note" else "Update Note"
-
-  AlertDialog(
-    onDismissRequest = { onDismiss() },
-    title = { Text(dialogTitle) },
-    text = {
-      Column {
-        Text("Title")
-        TextField(value = title.value, onValueChange = { title.value = it })
-        Text("Description")
-        TextField(value = description.value, onValueChange = { description.value = it })
-      }
-    },
-    confirmButton = {
-      if (isCreation) {
-        Button(
-          onClick = { onNoteCreate(title.value, description.value) },
-          enabled = title.value.isNotBlank() && description.value.isNotBlank()
-        ) {
-          Text(text = "Create")
-        }
-      } else {
-        Button(
-          onClick = {
-            onNoteUpdate(note!!.copy(title = title.value, description = description.value))
+      AlertDialog(
+          onDismissRequest = { onDismiss() },
+          title = { Text("New Note") },
+          text = {
+            Column {
+              Text("Title")
+              TextField(value = title.value, onValueChange = { title.value = it })
+              Text("Description")
+              TextField(value = description.value, onValueChange = { description.value = it })
+            }
           },
-          enabled = title.value.isNotBlank() && description.value.isNotBlank()
-        ) { Text(text = "Update") }
-      }
-    },
-    dismissButton = {
-      if (!isCreation) {
-        Button(
-          backgroundColor = MaterialTheme.colors.error,
-          contentColor = MaterialTheme.colors.onError,
-          onClick = { onNoteDelete(note!!.id) }
-        ) { Text(text = "Delete") }
-      }
+          confirmButton = {
+            Button(
+                onClick = { onNoteCreate(title.value, description.value) },
+                enabled = title.value.isNotBlank() && description.value.isNotBlank()
+            ) {
+              Text(text = "Create")
+            }
+          }
+      )
     }
-  )
+    else -> {
+      val title = remember { mutableStateOf(note.title) }
+      val description = remember { mutableStateOf(note.description) }
+
+      AlertDialog(
+          onDismissRequest = { onDismiss() },
+          title = { Text("Update Note") },
+          text = {
+            Column {
+              Text("Title")
+              TextField(value = title.value, onValueChange = { title.value = it })
+              Text("Description")
+              TextField(value = description.value, onValueChange = { description.value = it })
+            }
+          },
+          confirmButton = {
+            Button(
+                onClick = {
+                  onNoteUpdate(note.copy(title = title.value, description = description.value))
+                },
+                enabled = title.value.isNotBlank() && description.value.isNotBlank()
+            ) { Text(text = "Update") }
+          },
+          dismissButton = {
+            Button(
+                backgroundColor = MaterialTheme.colors.error,
+                contentColor = MaterialTheme.colors.onError,
+                onClick = { onNoteDelete(note.id) }
+            ) { Text(text = "Delete") }
+          }
+      )
+    }
+  }
 }
 
 // region previews
 @Preview("note item")
 @Composable
 fun NoteItemPreview() = NoteItem(
-  note =
-  UiNote(1L, "title", "This is my preview description")
+    note =
+    UiNote(1L, "title", "This is my preview description")
 )
 
 @Preview(name = "empty list")
@@ -223,17 +239,17 @@ fun LoadingNoteList() = NoteList(emptyList(), true, {})
 @Preview(name = "loaded list")
 @Composable
 fun PreviewNoteList() = NoteList(
-  list = listOf(
-    UiNote(1L, "Title 1", "Desc 1"),
-    UiNote(2L, "Title 2", "Desc 2"),
-    UiNote(3L, "Title 3", "Desc 3"),
-  ),
-  isLoading = false,
-  onItemClicked = {}
+    list = listOf(
+        UiNote(1L, "Title 1", "Desc 1"),
+        UiNote(2L, "Title 2", "Desc 2"),
+        UiNote(3L, "Title 3", "Desc 3"),
+    ),
+    isLoading = false,
+    onItemClicked = {}
 )
 
 class FabPreviewAllowCreationParamProvider(
-  override val values: Sequence<Boolean> = sequenceOf(true, false)
+    override val values: Sequence<Boolean> = sequenceOf(true, false)
 ) : PreviewParameterProvider<Boolean>
 
 
