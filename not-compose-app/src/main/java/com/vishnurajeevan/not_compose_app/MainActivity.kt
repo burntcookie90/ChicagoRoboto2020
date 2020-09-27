@@ -125,7 +125,7 @@ class MainActivity : AppCompatActivity() {
         }
         else -> {
           val title = "Update Note"
-          noteTitle.setText(note!!.title)
+          noteTitle.setText(note.title)
           noteDesc.setText(note.description)
           confirmButton.text = "Update"
           confirmButton.setOnClickListener {
