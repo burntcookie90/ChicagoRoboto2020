@@ -138,7 +138,7 @@ fun NoteList(
 @Preview("New Note Fab")
 @Composable
 fun NewNoteFab(
-    @PreviewParameter(FabPreviewAllowCreationParamProvider::class) allowCreation: Boolean,
+    @PreviewParameter(BooleanParamProvider::class) allowCreation: Boolean,
     onClick: () -> Unit = {}) {
   ExtendedFloatingActionButton(
       text = { if (allowCreation) Text("Add New Note") else Text("Maximum Notes") },
@@ -246,7 +246,7 @@ fun PreviewNoteList() = NoteList(
     onItemClicked = {}
 )
 
-class FabPreviewAllowCreationParamProvider(
+class BooleanParamProvider(
     override val values: Sequence<Boolean> = sequenceOf(true, false)
 ) : PreviewParameterProvider<Boolean>
 
