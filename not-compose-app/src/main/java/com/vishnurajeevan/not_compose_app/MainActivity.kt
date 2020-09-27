@@ -1,15 +1,15 @@
 package com.vishnurajeevan.not_compose_app
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -24,7 +24,12 @@ import com.vishnurajeevan.chicagoroboto2020.viewmodel.NoteListViewState
 import com.vishnurajeevan.not_compose_app.databinding.ActivityMainBinding
 import com.vishnurajeevan.not_compose_app.databinding.DialogNoteBinding
 import com.vishnurajeevan.not_compose_app.databinding.ItemNoteBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
@@ -32,8 +37,8 @@ class MainActivity : AppCompatActivity() {
   private lateinit var adapter: NoteListAdapter
   private val viewModel by viewModels<NoteListViewModel>()
   private var noteDialog: AlertDialog? = null
-
   private val modifier by lazy { Graph.modifier }
+  private var bindJob: Job? = null
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -41,8 +46,11 @@ class MainActivity : AppCompatActivity() {
     setContentView(binding.root)
     Graph.setup(this.applicationContext)
 
-    viewModel.state.observe(this, Observer { bind(it) })
     viewModel.load()
+    bindJob = lifecycleScope.launchWhenResumed {
+      viewModel.state.flowOn(Dispatchers.Main)
+          .collect { bind(it) }
+    }
     binding.noteList.layoutManager = LinearLayoutManager(this)
     adapter = NoteListAdapter {
       viewModel.showNoteCompositionDialog(true, it)
@@ -50,7 +58,13 @@ class MainActivity : AppCompatActivity() {
     binding.noteList.adapter = adapter
   }
 
+  override fun onPause() {
+    super.onPause()
+    bindJob?.cancel()
+  }
+
   private fun bind(viewState: NoteListViewState) = with(binding) {
+    log("binding $viewState")
     addNotesFab.bind(viewState.creationEnabled)
 
     when {
@@ -69,9 +83,9 @@ class MainActivity : AppCompatActivity() {
         emptyView.visibility = View.GONE
         progressBar.visibility = View.GONE
         noteList.visibility = View.VISIBLE
-        adapter.submitList(viewState.notes)
       }
     }
+    adapter.submitList(viewState.notes)
 
     if (viewState.showCompositionDialog) {
       noteDialog = noteDialog(viewState.noteToEdit).also { it.show() }
@@ -161,21 +175,21 @@ class MainActivity : AppCompatActivity() {
 
 class NoteListViewModel() : ViewModel() {
   private val repo by lazy { Graph.noteRepo }
-  val state = MutableLiveData(NoteListViewState())
+  private val _state = MutableStateFlow(NoteListViewState())
+  val state: Flow<NoteListViewState> = _state
 
   fun load() = viewModelScope.launch {
     repo.notes()
         .collect {
-          state.postValue(state.value!!.copy(notes = it, isLoading = false))
+          log("Got $it")
+          _state.value = _state.value.copy(notes = it, isLoading = false)
         }
   }
 
   fun showNoteCompositionDialog(shouldShow: Boolean, noteToEdit: UiNote? = null) {
-    state.postValue(
-        state.value!!.copy(
-            showCompositionDialog = shouldShow,
-            noteToEdit = if (shouldShow) noteToEdit else null
-        )
+    _state.value = _state.value.copy(
+        showCompositionDialog = shouldShow,
+        noteToEdit = if (shouldShow) noteToEdit else null
     )
   }
 }
@@ -211,3 +225,5 @@ class NoteItemViewHolder(
     desc.text = note.description
   }
 }
+
+fun log(message: String) = Log.d("MainActivity", message)
