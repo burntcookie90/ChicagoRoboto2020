@@ -1,14 +1,16 @@
 package com.vishnurajeevan.not_compose_app
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
-import androidx.lifecycle.*
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
@@ -22,7 +24,7 @@ import com.vishnurajeevan.chicagoroboto2020.viewmodel.NoteListViewState
 import com.vishnurajeevan.not_compose_app.databinding.ActivityMainBinding
 import com.vishnurajeevan.not_compose_app.databinding.DialogNoteBinding
 import com.vishnurajeevan.not_compose_app.databinding.ItemNoteBinding
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
@@ -39,10 +41,7 @@ class MainActivity : AppCompatActivity() {
     setContentView(binding.root)
     Graph.setup(this.applicationContext)
 
-    viewModel.state.observe(this, Observer {
-      Log.d("Not Compose", "Emitting new $it")
-      bind(it)
-    })
+    viewModel.state.observe(this, Observer { bind(it) })
     viewModel.load()
     binding.noteList.layoutManager = LinearLayoutManager(this)
     adapter = NoteListAdapter {
@@ -52,7 +51,6 @@ class MainActivity : AppCompatActivity() {
   }
 
   private fun bind(viewState: NoteListViewState) = with(binding) {
-    Log.d("Not Compose", "binding $viewState")
     addNotesFab.bind(viewState.creationEnabled)
 
     when {
@@ -168,7 +166,6 @@ class NoteListViewModel() : ViewModel() {
   fun load() = viewModelScope.launch {
     repo.notes()
         .collect {
-          Log.d("Not Compose ViewModel", "Got $it from repo")
           state.postValue(state.value!!.copy(notes = it, isLoading = false))
         }
   }
