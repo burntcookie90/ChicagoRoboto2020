@@ -75,7 +75,8 @@ class MainActivity : AppCompatActivity() {
 
     if (viewState.showCompositionDialog) {
       noteDialog = noteDialog(viewState.noteToEdit).also { it.show() }
-    } else {
+    }
+    else {
       noteDialog?.dismiss()
       noteDialog == null
     }
@@ -89,7 +90,8 @@ class MainActivity : AppCompatActivity() {
       setOnClickListener {
         viewModel.showNoteCompositionDialog(true)
       }
-    } else {
+    }
+    else {
       text = "Maximum Notes"
       setBackgroundColor(MaterialColors.getColor(this, R.attr.colorError))
       setTextColor(MaterialColors.getColor(this, R.attr.colorOnError))
@@ -99,48 +101,60 @@ class MainActivity : AppCompatActivity() {
 
   private fun noteDialog(note: UiNote? = null): AlertDialog {
     return with(DialogNoteBinding.inflate(layoutInflater)) {
-      val creationEnabled = note == null
-      val title = if (creationEnabled) "New Note" else "Update Note"
-      val dialog = AlertDialog.Builder(this@MainActivity)
-        .setTitle(title)
-        .setView(root)
-        .setOnDismissListener { viewModel.showNoteCompositionDialog(false) }
-        .create()
+      when (note) {
+        null -> {
+          val title = "New Note"
+          confirmButton.text = "Create"
+          confirmButton.setOnClickListener {
+            Graph.modifier.submit(
+                Modification.CreateNote(
+                    noteTitle.text.toString(),
+                    noteDesc.text.toString()
+                )
+            )
+            viewModel.showNoteCompositionDialog(false)
+          }
+          deleteButton.visibility = View.GONE
+          val dialog = AlertDialog.Builder(this@MainActivity)
+              .setTitle(title)
+              .setView(root)
+              .setOnDismissListener { viewModel.showNoteCompositionDialog(false) }
+              .create()
 
-      if (creationEnabled) {
-        confirmButton.text = "Create"
-        confirmButton.setOnClickListener {
-          Graph.modifier.submit(
-            Modification.CreateNote(
-              noteTitle.text.toString(),
-              noteDesc.text.toString()
+          dialog
+        }
+        else -> {
+          val title = "Update Note"
+          noteTitle.setText(note!!.title)
+          noteDesc.setText(note.description)
+          confirmButton.text = "Update"
+          confirmButton.setOnClickListener {
+            Graph.modifier.submit(
+                Modification.UpdateNote(
+                    note.copy(
+                        title = noteTitle.text.toString(),
+                        description = noteDesc.text.toString()
+                    )
+                )
             )
-          )
-          viewModel.showNoteCompositionDialog(false)
+            viewModel.showNoteCompositionDialog(false)
+          }
+          deleteButton.visibility = View.VISIBLE
+          deleteButton.setOnClickListener {
+            Graph.modifier.submit(Modification.DeleteNote(note.id))
+            viewModel.showNoteCompositionDialog(false)
+          }
+
+          val dialog = AlertDialog.Builder(this@MainActivity)
+              .setTitle(title)
+              .setView(root)
+              .setOnDismissListener { viewModel.showNoteCompositionDialog(false) }
+              .create()
+
+          dialog
         }
-        deleteButton.visibility = View.GONE
-      } else {
-        noteTitle.setText(note!!.title)
-        noteDesc.setText(note.description)
-        confirmButton.text = "Update"
-        confirmButton.setOnClickListener {
-          Graph.modifier.submit(
-            Modification.UpdateNote(
-              note.copy(
-                title = noteTitle.text.toString(),
-                description = noteDesc.text.toString()
-              )
-            )
-          )
-          viewModel.showNoteCompositionDialog(false)
-        }
-        deleteButton.visibility = View.VISIBLE
-        deleteButton.setOnClickListener {
-          Graph.modifier.submit(Modification.DeleteNote(note.id))
-          viewModel.showNoteCompositionDialog(false)
-        }
+
       }
-      dialog
     }
   }
 }
@@ -151,28 +165,28 @@ class NoteListViewModel() : ViewModel() {
 
   fun load() = viewModelScope.launch {
     repo.notes()
-      .collect {
-        Log.d("Not Compose ViewModel", "Got $it from repo")
-        state.postValue(state.value!!.copy(notes = it, isLoading = false))
-      }
+        .collect {
+          Log.d("Not Compose ViewModel", "Got $it from repo")
+          state.postValue(state.value!!.copy(notes = it, isLoading = false))
+        }
   }
 
   fun showNoteCompositionDialog(shouldShow: Boolean, noteToEdit: UiNote? = null) {
     state.postValue(
-      state.value!!.copy(
-        showCompositionDialog = shouldShow,
-        noteToEdit = if (shouldShow) noteToEdit else null
-      )
+        state.value!!.copy(
+            showCompositionDialog = shouldShow,
+            noteToEdit = if (shouldShow) noteToEdit else null
+        )
     )
   }
 }
 
 class NoteListAdapter(private val onItemClick: (UiNote) -> Unit) :
-  ListAdapter<UiNote, NoteItemViewHolder>(
-    object : DiffUtil.ItemCallback<UiNote?>() {
-      override fun areItemsTheSame(old: UiNote, new: UiNote) = old.id == new.id
-      override fun areContentsTheSame(old: UiNote, new: UiNote) = old == new
-    }) {
+    ListAdapter<UiNote, NoteItemViewHolder>(
+        object : DiffUtil.ItemCallback<UiNote?>() {
+          override fun areItemsTheSame(old: UiNote, new: UiNote) = old.id == new.id
+          override fun areContentsTheSame(old: UiNote, new: UiNote) = old == new
+        }) {
   override fun onCreateViewHolder(p0: ViewGroup, p1: Int): NoteItemViewHolder {
     val binding = ItemNoteBinding.inflate(LayoutInflater.from(p0.context), p0, false)
     return NoteItemViewHolder(onItemClick, binding, binding.root)
@@ -182,9 +196,9 @@ class NoteListAdapter(private val onItemClick: (UiNote) -> Unit) :
 }
 
 class NoteItemViewHolder(
-  private val onItemClick: (UiNote) -> Unit,
-  private val binding: ItemNoteBinding,
-  itemView: View
+    private val onItemClick: (UiNote) -> Unit,
+    private val binding: ItemNoteBinding,
+    itemView: View
 ) : RecyclerView.ViewHolder(itemView) {
   private lateinit var note: UiNote
 
