@@ -8,7 +8,6 @@ import android.view.ViewGroup
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
@@ -26,6 +25,7 @@ import com.vishnurajeevan.not_compose_app.databinding.ActivityMainBinding
 import com.vishnurajeevan.not_compose_app.databinding.DialogNoteBinding
 import com.vishnurajeevan.not_compose_app.databinding.ItemNoteBinding
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 
+@ExperimentalCoroutinesApi
 class MainActivity : AppCompatActivity() {
   private lateinit var binding: ActivityMainBinding
   private lateinit var adapter: NoteListAdapter
@@ -160,6 +161,7 @@ class MainActivity : AppCompatActivity() {
   }
 }
 
+@ExperimentalCoroutinesApi
 class NoteListViewModel() : ViewModel() {
   private val repo by lazy { Graph.noteRepo }
   private val _state = MutableStateFlow(NoteListViewState())
@@ -180,17 +182,22 @@ class NoteListViewModel() : ViewModel() {
 }
 
 class NoteListAdapter(private val onItemClick: (UiNote) -> Unit) :
-    ListAdapter<UiNote, NoteItemViewHolder>(
-        object : DiffUtil.ItemCallback<UiNote?>() {
-          override fun areItemsTheSame(old: UiNote, new: UiNote) = old.id == new.id
-          override fun areContentsTheSame(old: UiNote, new: UiNote) = old == new
-        }) {
-  override fun onCreateViewHolder(p0: ViewGroup, p1: Int): NoteItemViewHolder {
-    val binding = ItemNoteBinding.inflate(LayoutInflater.from(p0.context), p0, false)
-    return NoteItemViewHolder(onItemClick, binding, binding.root)
-  }
+    ListAdapter<UiNote, NoteItemViewHolder>(diffCallback) {
+  override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): NoteItemViewHolder =
+      ItemNoteBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+          .let {
+            NoteItemViewHolder(onItemClick, it, it.root)
+          }
 
-  override fun onBindViewHolder(p0: NoteItemViewHolder, p1: Int) = p0.bind(getItem(p1))
+  override fun onBindViewHolder(holder: NoteItemViewHolder, position: Int) = holder.bind(
+      getItem(position))
+
+  companion object {
+    val diffCallback = object : DiffUtil.ItemCallback<UiNote?>() {
+      override fun areItemsTheSame(old: UiNote, new: UiNote) = old.id == new.id
+      override fun areContentsTheSame(old: UiNote, new: UiNote) = old == new
+    }
+  }
 }
 
 class NoteItemViewHolder(
