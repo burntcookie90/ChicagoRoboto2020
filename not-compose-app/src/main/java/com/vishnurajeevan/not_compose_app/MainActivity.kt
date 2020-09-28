@@ -49,13 +49,10 @@ class MainActivity : AppCompatActivity() {
 
     viewModel.load()
     bindJob = lifecycleScope.launchWhenResumed {
-      viewModel.state.flowOn(Dispatchers.Main)
-          .collect { bind(it) }
+      viewModel.state.flowOn(Dispatchers.Main).collect { bind(it) }
     }
     binding.noteList.layoutManager = LinearLayoutManager(this)
-    adapter = NoteListAdapter {
-      viewModel.showNoteCompositionDialog(true, it)
-    }
+    adapter = NoteListAdapter { viewModel.showNoteCompositionDialog(true, it) }
     binding.noteList.adapter = adapter
   }
 
@@ -101,9 +98,7 @@ class MainActivity : AppCompatActivity() {
       text = "Add New Note"
       setBackgroundColor(MaterialColors.getColor(this, R.attr.colorSecondary))
       setTextColor(MaterialColors.getColor(this, R.attr.colorOnSecondary))
-      setOnClickListener {
-        viewModel.showNoteCompositionDialog(true)
-      }
+      setOnClickListener { viewModel.showNoteCompositionDialog(true) }
     }
     else {
       text = "Maximum Notes"
