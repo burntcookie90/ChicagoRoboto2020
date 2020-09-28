@@ -16,7 +16,6 @@ import androidx.compose.ui.unit.dp
 import androidx.ui.tooling.preview.Preview
 import androidx.ui.tooling.preview.PreviewParameter
 import androidx.ui.tooling.preview.PreviewParameterProvider
-import com.vishnurajeevan.chicagoroboto2020.graph.Graph
 import com.vishnurajeevan.chicagoroboto2020.models.UiNote
 import com.vishnurajeevan.chicagoroboto2020.modifier.Modification
 import com.vishnurajeevan.chicagoroboto2020.ui.ChicagoRoboto2020Theme
@@ -28,8 +27,9 @@ import kotlinx.coroutines.flow.flowOn
 @Composable
 fun NoteScreen() {
   val state = remember { mutableStateOf(NoteListViewState()) }
+  val noteRepo = NoteRepoAmbient.current
   launchInComposition {
-    Graph.noteRepo.notes().flowOn(Dispatchers.IO).collect {
+    noteRepo.notes().flowOn(Dispatchers.IO).collect {
       state.value = state.value.copy(isLoading = false, notes = it)
     }
   }
@@ -41,7 +41,7 @@ fun NoteScreen() {
     )
   }
 
-  val dataModifier = AmbientDataModifier.current
+  val dataModifier = DataModifierAmbient.current
   ChicagoRoboto2020Theme {
     // A surface container using the 'background' color from the theme
     Surface(color = MaterialTheme.colors.background) {
