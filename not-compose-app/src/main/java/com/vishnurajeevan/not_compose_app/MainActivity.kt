@@ -64,7 +64,6 @@ class MainActivity : AppCompatActivity() {
   }
 
   private fun bind(viewState: NoteListViewState) = with(binding) {
-    log("binding $viewState")
     addNotesFab.bind(viewState.creationEnabled)
 
     when {
@@ -179,11 +178,9 @@ class NoteListViewModel() : ViewModel() {
   val state: Flow<NoteListViewState> = _state
 
   fun load() = viewModelScope.launch {
-    repo.notes()
-        .collect {
-          log("Got $it")
-          _state.value = _state.value.copy(notes = it, isLoading = false)
-        }
+    repo.notes().collect {
+      _state.value = _state.value.copy(notes = it, isLoading = false)
+    }
   }
 
   fun showNoteCompositionDialog(shouldShow: Boolean, noteToEdit: UiNote? = null) {
