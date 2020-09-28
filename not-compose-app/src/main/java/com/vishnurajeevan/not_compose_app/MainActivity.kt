@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
@@ -120,21 +121,16 @@ class MainActivity : AppCompatActivity() {
           confirmButton.text = "Create"
           confirmButton.setOnClickListener {
             modifier.submit(
-                Modification.CreateNote(
-                    noteTitle.text.toString(),
-                    noteDesc.text.toString()
-                )
+                Modification.CreateNote(noteTitle.text.toString(), noteDesc.text.toString())
             )
             viewModel.showNoteCompositionDialog(false)
           }
           deleteButton.visibility = View.GONE
-          val dialog = AlertDialog.Builder(this@MainActivity)
+          AlertDialog.Builder(this@MainActivity)
               .setTitle(title)
               .setView(root)
               .setOnDismissListener { viewModel.showNoteCompositionDialog(false) }
               .create()
-
-          dialog
         }
         else -> {
           val title = "Update Note"
@@ -158,15 +154,12 @@ class MainActivity : AppCompatActivity() {
             viewModel.showNoteCompositionDialog(false)
           }
 
-          val dialog = AlertDialog.Builder(this@MainActivity)
+          AlertDialog.Builder(this@MainActivity)
               .setTitle(title)
               .setView(root)
               .setOnDismissListener { viewModel.showNoteCompositionDialog(false) }
               .create()
-
-          dialog
         }
-
       }
     }
   }
